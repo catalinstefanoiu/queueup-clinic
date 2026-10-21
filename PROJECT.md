@@ -49,6 +49,8 @@ Domain: **medical clinic** (waiting room replacement). The AI assistant is scope
 
 Cloud provider: **GCP only**. Languages: **TypeScript everywhere, Python only for the ML service.**
 
+**Firebase access from Angular:** the official modular `firebase` JS SDK, wrapped in small hand-written Angular services — **not** `@angular/fire`. Decided Oct 2026: AngularFire had no release supporting Angular 22 (latest stable 20.1.1 requires Angular 20; 21.0.0 was only a release candidate), and downgrading was rejected because Angular 20 support ends Nov 2026. See angular/angularfire issues #3696 and #3737.
+
 ---
 
 ## 3. Repository
@@ -112,6 +114,8 @@ queueup-clinic/
 All documents carry a `clinicId`, even with a single clinic — so multi-clinic support stays possible without migrating data later.
 
 ```typescript
+import { Timestamp } from 'firebase/firestore';
+
 interface Clinic {
   id: string;
   name: string;
@@ -177,8 +181,8 @@ If behind schedule: simplify push notifications first (in-app alert while the pa
 - [ ] Dissertation proposal sent to coordinator
 
 **Core app**
+- [ ] Firebase JS SDK (`firebase`) installed and connected
 - [ ] Data model files (`Clinic`, `Service`, `QueueEntry`)
-- [ ] `@angular/fire` installed and connected
 - [ ] Patient join page + live position
 - [ ] QR code join links
 - [ ] Staff Auth + admin dashboard
@@ -214,9 +218,12 @@ If behind schedule: simplify push notifications first (in-app alert while the pa
 
 ## 9. Local environment (confirmed working)
 
-- Node.js v24.15.0 · Angular CLI 22.0.4 · Docker v29.5.3
-- gcloud CLI linked to project `queueup-clinic`
-- To install later: Python 3, Firebase CLI, Terraform, k6
+New Windows laptop (Oct 2026), project in `D:/Projects/queueup-clinic`:
+
+- Node.js v24.21.0 · npm 11.19.0 · Angular CLI 22.0.4
+- gcloud CLI 590.0.0 linked to project `queueup-clinic`
+- `npm install` + `ng serve` in `frontend/` working (`localhost:4200/queue`)
+- To install later: Docker, Python 3, Firebase CLI, Terraform, k6
 
 ---
 
