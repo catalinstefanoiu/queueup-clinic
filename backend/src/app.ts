@@ -6,5 +6,5 @@ export const app = express();
 
 // Health check: a simple route that shows the server is alive
 app.get('/health', (_req, res) => {
-    res.json({ status: 'ok' });
+  res.json({ status: 'ok' });
 });

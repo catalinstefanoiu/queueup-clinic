@@ -389,7 +389,42 @@ Gotcha: <http://localhost:8080/> shows **"Cannot GET /"** — that's Express's a
 
 The same script names will be reused in Docker and GitHub Actions.
 
-Next: shared formatting settings (`.editorconfig` + Prettier) for the whole repo — right now they only exist in `frontend/`, so VS Code uses 4-space indentation in `backend/`.
+### Shared formatting for the whole repo (`.editorconfig` + Prettier)
+
+Problem: Angular generated `.editorconfig` and `.prettierrc` inside `frontend/`, so `backend/` didn't get them (VS Code showed "Spaces: 4" there). Both tools look for their config in the current folder **and then in parent folders**, so moving them to the repo root makes them apply to every project folder.
+
+```bash
+# from the repo root
+git mv frontend/.editorconfig .editorconfig   # git mv = move + record it as a rename (history kept)
+git mv frontend/.prettierrc .prettierrc
+```
+
+VS Code doesn't read `.editorconfig` by itself and has no built-in Prettier. Install (check the verified publisher):
+- **EditorConfig for VS Code** (publisher EditorConfig)
+- **Prettier - Code formatter** (publisher Prettier)
+
+Settings (`Ctrl+,`): **Format On Save** ✔, **Default Formatter** = Prettier. Check: the status bar shows "Spaces: 2" and "✓ Prettier".
+
+Prettier in the backend, plus scripts to format everything at once (`format:check` will run in CI):
+
+```bash
+cd backend
+npm install --save-dev prettier
+npm pkg set scripts.format="prettier --write src" scripts.format:check="prettier --check src"
+npm run format
+```
+
+`npm pkg set` edits `package.json` from the command line (`scripts.format` = the `format` key inside `scripts`).
+
+Repo-wide extension recommendations — `.vscode/extensions.json` at the **repo root** (VS Code only reads `.vscode/` from the folder you open, so `frontend/.vscode/` is ignored when opening the repo root):
+
+```json
+{ "recommendations": ["EditorConfig.EditorConfig", "esbenp.prettier-vscode", "angular.ng-template"] }
+```
+
+On a new machine VS Code then offers to install all of them. The root `.gitignore` already has `.vscode/*` + `!.vscode/extensions.json`, so only this file is committed.
+
+Next: connect the backend to Firestore with the Firebase Admin SDK + Application Default Credentials.
 
 ---
 
@@ -403,5 +438,6 @@ Next: shared formatting settings (`.editorconfig` + Prettier) for the whole repo
 - [ ] gcloud installer → restart VS Code → `gcloud init` → `gcloud config list`
 - [ ] Firebase: register web app → `npm install firebase` → config file → `FirebaseService`
 - [ ] Firestore: Standard, `(default)`, pick the region carefully (permanent; match your Cloud Run region), **production mode**
-- [ ] Backend: `npm init -y` → `npm pkg set type=module` → Express + TypeScript (type-check only) → `tsconfig.json` from §8
+- [ ] Backend: `npm init -y` → `npm pkg set type=module` → Express + TypeScript (type-check only) → `tsconfig.json` from §8 → scripts `dev` / `start` / `typecheck`
+- [ ] `.editorconfig` + `.prettierrc` at the **repo root**, VS Code extensions EditorConfig + Prettier, Format On Save, root `.vscode/extensions.json`
 - [ ] Work on feature branches, merge through PRs with squash
