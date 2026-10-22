@@ -28,6 +28,7 @@ QueueUp is Cătălin's **master's dissertation project** (Faculty of Mathematics
 - Angular 22 (CLI 22.0.4), standalone components, **plain CSS** (not SCSS for own styles), no SSR. Angular Material with the Azure/Blue theme.
 - Firebase **Hosting** (SPA), not App Hosting. GCP only, no Azure.
 - **No `@angular/fire`.** Use the official modular `firebase` JS SDK directly, wrapped in our own Angular services; `Timestamp` comes from `firebase/firestore`. Reason: no AngularFire release supports Angular 22 (Oct 2026), and downgrading Angular was rejected (Angular 20 support ends Nov 2026). Revisit only if a *stable* AngularFire 22 ships — check npm first. Details in `PROJECT.md` §2.
+- **Frontend and backend in parallel, in vertical slices** (Cătălin wants to learn the whole stack end to end). Writes go through Express + Firebase Admin SDK (ticket numbering, join, call next, cancel); live reads go straight from Angular to Firestore via `onSnapshot`. Backend runs locally with Application Default Credentials (`gcloud auth application-default login`) — no service-account JSON in the repo. Details in `PROJECT.md` §2 and §6.
 - TypeScript everywhere; Python only for `ml-service/` (simulator + wait-time prediction). Cătălin is a beginner in Python.
 - Monorepo: `frontend/`, `backend/`, `ml-service/`, `infra/`, `docs/`, `.github/workflows/`.
 - Routing: `''` redirects to `queue`; `queue` renders `PatientQueue` (`frontend/src/app/pages/patient-queue/`). `app.html` contains only `<router-outlet>`.
@@ -44,9 +45,11 @@ QueueUp is Cătălin's **master's dissertation project** (Faculty of Mathematics
 
 ## Next steps (in order)
 
-1. Connect the app to Firebase with the `firebase` JS SDK (branch `feature/firebase-setup`): register the web app in Firebase Console → get `firebaseConfig` → install `firebase` → initialize it in the app. Do this **before** the model files, since they import `Timestamp` from `firebase/firestore`.
-2. Create the models in `frontend/src/app/models/` exactly as in `PROJECT.md` §5 (`Clinic`, `Service`, `QueueEntry`; ticket numbers, `clinicId`, no phone number — this supersedes any earlier draft).
-3. Patient join page with live position, then QR join links, then staff Auth and the admin dashboard. After that follow the timeline in `PROJECT.md` §6.
-4. Dissertation proposal for the coordinator (one page, English) — **postponed** until Cătălin finds a coordinator; he's still looking and chose to start on the app first.
+1. Connect the frontend to Firebase with the `firebase` JS SDK (branch `feature/firebase-setup`). Done: web app `queueup-web` registered, `firebase` 13.1.0 installed, `frontend/src/app/firebase.config.ts` created. Next: `frontend/src/app/services/firebase.service.ts` (`initializeApp` + `getFirestore`), then check in the console that the Firestore database exists and in which region.
+2. Backend skeleton in `backend/`: Node + TypeScript + Express, `GET /health`, run locally. Check current Express/tooling versions first.
+3. Connect the backend to Firestore with Firebase Admin SDK + Application Default Credentials.
+4. Create the models exactly as in `PROJECT.md` §5 (`Clinic`, `Service`, `QueueEntry`; ticket numbers, `clinicId`, no phone number — this supersedes any earlier draft). Frontend and backend both need them — decide then whether to share one copy.
+5. First vertical slice: `POST /queue/join` (ticket number in a Firestore transaction) + Angular join page + live position via `onSnapshot`. Then staff Auth, admin dashboard, QR join links, TV display — following `PROJECT.md` §6.
+6. Dissertation proposal for the coordinator (one page, English) — **postponed** until Cătălin finds a coordinator; he's still looking and chose to start on the app first.
 
 Keep `PROJECT.md` §7 (checklist) updated as steps are completed, and keep a short work log in `docs/` — it becomes raw material for the dissertation.

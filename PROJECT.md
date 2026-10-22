@@ -51,6 +51,8 @@ Cloud provider: **GCP only**. Languages: **TypeScript everywhere, Python only fo
 
 **Firebase access from Angular:** the official modular `firebase` JS SDK, wrapped in small hand-written Angular services — **not** `@angular/fire`. Decided Oct 2026: AngularFire had no release supporting Angular 22 (latest stable 20.1.1 requires Angular 20; 21.0.0 was only a release candidate), and downgrading was rejected because Angular 20 support ends Nov 2026. See angular/angularfire issues #3696 and #3737.
 
+**Data flow:** writes go through the Express backend (Firebase Admin SDK) — ticket numbering, joining, calling the next patient, cancelling — so business rules can't be bypassed by the client. Live reads go straight from Angular to Firestore with real-time listeners (`onSnapshot`), protected by Security Rules.
+
 ---
 
 ## 3. Repository
@@ -160,12 +162,14 @@ interface QueueEntry {
 
 | Period | Work |
 |---|---|
-| **Oct–Nov 2026** | Proposal to the coordinator · connect Firebase · patient join + live position · admin dashboard · staff Auth · QR join links |
-| **Dec 2026–Jan 2027** | Express backend (queue logic, ticket numbers) · Docker · first Cloud Run deploy · TV display page · winter break = catch-up buffer |
+| **Oct–Nov 2026** | Connect Firebase · Express backend skeleton · first vertical slice: patient joins through the backend (ticket numbering) + live position from Firestore · staff Auth |
+| **Dec 2026–Jan 2027** | Admin dashboard (call next / served / no-show through the backend) · QR join links · TV display page · Docker + first Cloud Run deploy · winter break = catch-up buffer |
 | **Feb 2027** | PWA + push notifications (FCM) · start AI assistant |
 | **Mar 2027** | Finish AI assistant · Python simulator + prediction service |
 | **Apr 2027** | Terraform · GitHub Actions · all experiments (prediction, assistant, load tests) |
 | **May–Jun 2027** | Writing · buffer for the unexpected |
+
+Frontend and backend are built **in parallel, one vertical slice at a time** (each feature goes through Angular → Express → Firestore before starting the next), so every layer is learned end to end and no throwaway client-side logic is written. The coordinator proposal is sent as soon as a coordinator is found.
 
 If behind schedule: simplify push notifications first (in-app alert while the page is open), then reduce the experiment scope — never the core app.
 
@@ -182,14 +186,15 @@ If behind schedule: simplify push notifications first (in-app alert while the pa
 
 **Core app**
 - [ ] Firebase JS SDK (`firebase`) installed and connected
+- [ ] Backend skeleton (Express + TypeScript, `GET /health`) + Firebase Admin SDK via Application Default Credentials
 - [ ] Data model files (`Clinic`, `Service`, `QueueEntry`)
-- [ ] Patient join page + live position
+- [ ] Patient join (`POST /queue/join` + join page) + live position
 - [ ] QR code join links
 - [ ] Staff Auth + admin dashboard
 - [ ] TV display page
 
 **Backend & cloud**
-- [ ] Express API: join, position, call next, cancel, ticket numbering
+- [ ] Express API complete: call next, served / no-show, cancel
 - [ ] Docker + Cloud Run deploy
 - [ ] PWA + push notifications (FCM)
 - [ ] AI assistant with tool-calling
