@@ -49,6 +49,12 @@ Domain: **medical clinic** (waiting room replacement). The AI assistant is scope
 
 Cloud provider: **GCP only**. Languages: **TypeScript everywhere, Python only for the ML service.**
 
+**Firebase access from Angular:** the official modular `firebase` JS SDK, wrapped in small hand-written Angular services — **not** `@angular/fire`. Decided Oct 2026: AngularFire had no release supporting Angular 22 (latest stable 20.1.1 requires Angular 20; 21.0.0 was only a release candidate), and downgrading was rejected because Angular 20 support ends Nov 2026. See angular/angularfire issues #3696 and #3737.
+
+**Data flow:** writes go through the Express backend (Firebase Admin SDK) — ticket numbering, joining, calling the next patient, cancelling — so business rules can't be bypassed by the client. Live reads go straight from Angular to Firestore with real-time listeners (`onSnapshot`), protected by Security Rules.
+
+**Firestore database:** `(default)`, Standard edition, location **`europe-west4` (Netherlands)** — permanent, it can't be changed later. A regional location (not the `eur3` multi-region) keeps per-operation costs low, which matters for load tests. `europe-west4` is a Cloud Run Tier 1 (cheapest) region, so the backend will be deployed there too for low latency. Created in **production mode**: all client reads/writes are denied until we write Security Rules; the backend (Admin SDK) is not affected by the rules. The first database in a project gets the free quota (50k reads, 20k writes, 1 GiB storage per day).
+
 ---
 
 ## 3. Repository
@@ -112,6 +118,8 @@ queueup-clinic/
 All documents carry a `clinicId`, even with a single clinic — so multi-clinic support stays possible without migrating data later.
 
 ```typescript
+import { Timestamp } from 'firebase/firestore';
+
 interface Clinic {
   id: string;
   name: string;
@@ -156,12 +164,14 @@ interface QueueEntry {
 
 | Period | Work |
 |---|---|
-| **Oct–Nov 2026** | Proposal to the coordinator · connect Firebase · patient join + live position · admin dashboard · staff Auth · QR join links |
-| **Dec 2026–Jan 2027** | Express backend (queue logic, ticket numbers) · Docker · first Cloud Run deploy · TV display page · winter break = catch-up buffer |
+| **Oct–Nov 2026** | Connect Firebase · Express backend skeleton · first vertical slice: patient joins through the backend (ticket numbering) + live position from Firestore · staff Auth |
+| **Dec 2026–Jan 2027** | Admin dashboard (call next / served / no-show through the backend) · QR join links · TV display page · Docker + first Cloud Run deploy · winter break = catch-up buffer |
 | **Feb 2027** | PWA + push notifications (FCM) · start AI assistant |
 | **Mar 2027** | Finish AI assistant · Python simulator + prediction service |
 | **Apr 2027** | Terraform · GitHub Actions · all experiments (prediction, assistant, load tests) |
 | **May–Jun 2027** | Writing · buffer for the unexpected |
+
+Frontend and backend are built **in parallel, one vertical slice at a time** (each feature goes through Angular → Express → Firestore before starting the next), so every layer is learned end to end and no throwaway client-side logic is written. The coordinator proposal is sent as soon as a coordinator is found.
 
 If behind schedule: simplify push notifications first (in-app alert while the page is open), then reduce the experiment scope — never the core app.
 
@@ -177,15 +187,16 @@ If behind schedule: simplify push notifications first (in-app alert while the pa
 - [ ] Dissertation proposal sent to coordinator
 
 **Core app**
+- [x] Firebase JS SDK (`firebase`) installed and connected · Firestore database created (`europe-west4`)
+- [ ] Backend skeleton (Express + TypeScript, `GET /health`) + Firebase Admin SDK via Application Default Credentials
 - [ ] Data model files (`Clinic`, `Service`, `QueueEntry`)
-- [ ] `@angular/fire` installed and connected
-- [ ] Patient join page + live position
+- [ ] Patient join (`POST /queue/join` + join page) + live position
 - [ ] QR code join links
 - [ ] Staff Auth + admin dashboard
 - [ ] TV display page
 
 **Backend & cloud**
-- [ ] Express API: join, position, call next, cancel, ticket numbering
+- [ ] Express API complete: call next, served / no-show, cancel
 - [ ] Docker + Cloud Run deploy
 - [ ] PWA + push notifications (FCM)
 - [ ] AI assistant with tool-calling
@@ -214,9 +225,12 @@ If behind schedule: simplify push notifications first (in-app alert while the pa
 
 ## 9. Local environment (confirmed working)
 
-- Node.js v24.15.0 · Angular CLI 22.0.4 · Docker v29.5.3
-- gcloud CLI linked to project `queueup-clinic`
-- To install later: Python 3, Firebase CLI, Terraform, k6
+New Windows laptop (Oct 2026), project in `D:/Projects/queueup-clinic`:
+
+- Node.js v24.21.0 · npm 11.19.0 · Angular CLI 22.0.4
+- gcloud CLI 590.0.0 linked to project `queueup-clinic`
+- `npm install` + `ng serve` in `frontend/` working (`localhost:4200/queue`)
+- To install later: Docker, Python 3, Firebase CLI, Terraform, k6
 
 ---
 
