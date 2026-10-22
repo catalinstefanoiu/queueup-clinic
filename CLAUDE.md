@@ -47,10 +47,13 @@ QueueUp is Cătălin's **master's dissertation project** (Faculty of Mathematics
 
 ## Next steps (in order)
 
-1. Backend skeleton in `backend/` (new branch off `main`, e.g. `feature/backend-skeleton`): Node + TypeScript + Express, `GET /health`, run locally. Check current Express/tooling versions first.
-2. Connect the backend to Firestore with Firebase Admin SDK + Application Default Credentials.
-3. Create the models exactly as in `PROJECT.md` §5 (`Clinic`, `Service`, `QueueEntry`; ticket numbers, `clinicId`, no phone number — this supersedes any earlier draft). Frontend and backend both need them — decide then whether to share one copy.
-4. First vertical slice: `POST /queue/join` (ticket number in a Firestore transaction) + Angular join page + live position via `onSnapshot`. Then staff Auth, admin dashboard, QR join links, TV display — following `PROJECT.md` §6.
-5. Dissertation proposal for the coordinator (one page, English) — **postponed** until Cătălin finds a coordinator; he's still looking and chose to start on the app first.
+1. Done on branch `feature/backend-skeleton` (not merged yet): Express 5 + TypeScript run natively by Node 24 (`npm run dev` / `start` / `typecheck` / `format`), `GET /health`, `GET /health/firestore` via `firebase-admin` + ADC; `.editorconfig` / `.prettierrc` moved to the repo root. Details in `docs/setup-guide.md` §8. Next: open the PR and squash-merge it.
+2. Create the models exactly as in `PROJECT.md` §5 (`Clinic`, `Service`, `QueueEntry`; ticket numbers, `clinicId`, no phone number — this supersedes any earlier draft). Frontend and backend both need them — decide then whether to share one copy.
+3. First vertical slice: `POST /queue/join` (ticket number in a Firestore transaction) + Angular join page + live position via `onSnapshot`. Then staff Auth, admin dashboard, QR join links, TV display — following `PROJECT.md` §6.
+4. Dissertation proposal for the coordinator (one page, English) — **postponed** until Cătălin finds a coordinator; he's still looking and chose to start on the app first.
 
 Keep `PROJECT.md` §7 (checklist) updated as steps are completed, and keep a short work log in `docs/` — it becomes raw material for the dissertation.
+
+**`docs/setup-guide.md` — update it after every completed step** (Cătălin asked for this explicitly; he reuses it to set up future projects). It records each step with the exact commands, the choices made, why, and the gotchas we hit. Claude may edit this file without asking, on the current feature branch.
+
+**`docs/glossary.md` — add a one-line, plain-words entry whenever we start using a new concept or tool** (also asked for explicitly). Same rule: Claude may edit it without asking, on the current feature branch. **Exception to the English-docs rule: the glossary is written in Romanian** (Cătălin's request, so he understands it better); technical terms stay in English. It is **personal and git-ignored** (local only, not on GitHub) — on a fresh clone it won't exist; don't recreate it unless he asks.

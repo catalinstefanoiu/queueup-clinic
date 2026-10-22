@@ -188,7 +188,7 @@ If behind schedule: simplify push notifications first (in-app alert while the pa
 
 **Core app**
 - [x] Firebase JS SDK (`firebase`) installed and connected · Firestore database created (`europe-west4`)
-- [ ] Backend skeleton (Express + TypeScript, `GET /health`) + Firebase Admin SDK via Application Default Credentials
+- [x] Backend skeleton (Express + TypeScript, `GET /health`) + Firebase Admin SDK via Application Default Credentials
 - [ ] Data model files (`Clinic`, `Service`, `QueueEntry`)
 - [ ] Patient join (`POST /queue/join` + join page) + live position
 - [ ] QR code join links
