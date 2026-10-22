@@ -54,3 +54,5 @@ QueueUp is Cătălin's **master's dissertation project** (Faculty of Mathematics
 5. Dissertation proposal for the coordinator (one page, English) — **postponed** until Cătălin finds a coordinator; he's still looking and chose to start on the app first.
 
 Keep `PROJECT.md` §7 (checklist) updated as steps are completed, and keep a short work log in `docs/` — it becomes raw material for the dissertation.
+
+**`docs/setup-guide.md` — update it after every completed step** (Cătălin asked for this explicitly; he reuses it to set up future projects). It records each step with the exact commands, the choices made, why, and the gotchas we hit. Claude may edit this file without asking, on the current feature branch.

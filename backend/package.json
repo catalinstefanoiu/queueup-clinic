@@ -1,0 +1,23 @@
+{
+  "name": "queueup-backend",
+  "version": "0.1.0",
+  "description": "QueueUp backend: Express API for the clinic virtual queue",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.ts",
+    "start": "node src/server.ts",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.19.2",
+    "typescript": "~6.0.3"
+  }
+}
