@@ -53,6 +53,8 @@ Cloud provider: **GCP only**. Languages: **TypeScript everywhere, Python only fo
 
 **Data flow:** writes go through the Express backend (Firebase Admin SDK) — ticket numbering, joining, calling the next patient, cancelling — so business rules can't be bypassed by the client. Live reads go straight from Angular to Firestore with real-time listeners (`onSnapshot`), protected by Security Rules.
 
+**Firestore database:** `(default)`, Standard edition, location **`europe-west4` (Netherlands)** — permanent, it can't be changed later. A regional location (not the `eur3` multi-region) keeps per-operation costs low, which matters for load tests. `europe-west4` is a Cloud Run Tier 1 (cheapest) region, so the backend will be deployed there too for low latency. Created in **production mode**: all client reads/writes are denied until we write Security Rules; the backend (Admin SDK) is not affected by the rules. The first database in a project gets the free quota (50k reads, 20k writes, 1 GiB storage per day).
+
 ---
 
 ## 3. Repository
@@ -185,7 +187,7 @@ If behind schedule: simplify push notifications first (in-app alert while the pa
 - [ ] Dissertation proposal sent to coordinator
 
 **Core app**
-- [ ] Firebase JS SDK (`firebase`) installed and connected
+- [x] Firebase JS SDK (`firebase`) installed and connected · Firestore database created (`europe-west4`)
 - [ ] Backend skeleton (Express + TypeScript, `GET /health`) + Firebase Admin SDK via Application Default Credentials
 - [ ] Data model files (`Clinic`, `Service`, `QueueEntry`)
 - [ ] Patient join (`POST /queue/join` + join page) + live position

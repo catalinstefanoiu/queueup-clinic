@@ -39,17 +39,18 @@ QueueUp is Cătălin's **master's dissertation project** (Faculty of Mathematics
 - Done: Angular scaffold + Material, routing skeleton, GitHub repo (`catalinstefanoiu/queueup-clinic`, public, branch `main`), Firebase project `queueup-clinic`, `PROJECT.md` (dissertation version) pushed.
 - **New Windows laptop is set up** (project in `D:/Projects/queueup-clinic`; terminals in VS Code: Git Bash and PowerShell): Node 24.21.0, npm 11.19.0, Angular CLI 22.0.4, gcloud 590.0.0 linked to `queueup-clinic`; `npm install` + `ng serve` work. Docker, Firebase CLI, Python, Terraform and k6 are not installed yet — install when needed.
 - `ng serve` must be run from `frontend/` (that's where `angular.json` lives). `npm install` warns about 31 audit vulnerabilities and blocked install scripts (npm 11 `allowScripts`); both are non-blocking for now — review `npm audit` before the first deploy, and don't run `npm audit fix --force`.
+- **Frontend is connected to Firebase:** web app `queueup-web` registered; `firebase` 13.1.0 installed; `frontend/src/app/firebase.config.ts` (public web config, safe to commit) and `frontend/src/app/services/firebase.service.ts` (`initializeApp` + `getFirestore`, exposes `db`).
+- **Firestore database exists:** `(default)`, Standard edition, `europe-west4` (permanent), production mode (all client access denied until we write rules). Deploy Cloud Run to `europe-west4` too. Project is on the free Spark plan; Blaze will be needed for Cloud Run. App Check and restricting the web API key to our domains are planned before the first deploy.
 - `gcloud init` printed a Compute Engine API error — harmless, we don't use VMs. Don't enable that API.
 - Known, unresolved, non-blocking: VS Code shows 2 TypeScript 6 warnings in `tsconfig.app.json` / `tsconfig.spec.json` ("`rootDir` must be explicitly set"). The app builds and runs.
 - `frontend/.claude/CLAUDE.md` holds Angular's official best-practice rules (signals, `@if`/`@for`, `inject()`, etc.). Follow them for Angular code, but this root file's teaching-mode rules take priority.
 
 ## Next steps (in order)
 
-1. Connect the frontend to Firebase with the `firebase` JS SDK (branch `feature/firebase-setup`). Done: web app `queueup-web` registered, `firebase` 13.1.0 installed, `frontend/src/app/firebase.config.ts` created. Next: `frontend/src/app/services/firebase.service.ts` (`initializeApp` + `getFirestore`), then check in the console that the Firestore database exists and in which region.
-2. Backend skeleton in `backend/`: Node + TypeScript + Express, `GET /health`, run locally. Check current Express/tooling versions first.
-3. Connect the backend to Firestore with Firebase Admin SDK + Application Default Credentials.
-4. Create the models exactly as in `PROJECT.md` §5 (`Clinic`, `Service`, `QueueEntry`; ticket numbers, `clinicId`, no phone number — this supersedes any earlier draft). Frontend and backend both need them — decide then whether to share one copy.
-5. First vertical slice: `POST /queue/join` (ticket number in a Firestore transaction) + Angular join page + live position via `onSnapshot`. Then staff Auth, admin dashboard, QR join links, TV display — following `PROJECT.md` §6.
-6. Dissertation proposal for the coordinator (one page, English) — **postponed** until Cătălin finds a coordinator; he's still looking and chose to start on the app first.
+1. Backend skeleton in `backend/` (new branch off `main`, e.g. `feature/backend-skeleton`): Node + TypeScript + Express, `GET /health`, run locally. Check current Express/tooling versions first.
+2. Connect the backend to Firestore with Firebase Admin SDK + Application Default Credentials.
+3. Create the models exactly as in `PROJECT.md` §5 (`Clinic`, `Service`, `QueueEntry`; ticket numbers, `clinicId`, no phone number — this supersedes any earlier draft). Frontend and backend both need them — decide then whether to share one copy.
+4. First vertical slice: `POST /queue/join` (ticket number in a Firestore transaction) + Angular join page + live position via `onSnapshot`. Then staff Auth, admin dashboard, QR join links, TV display — following `PROJECT.md` §6.
+5. Dissertation proposal for the coordinator (one page, English) — **postponed** until Cătălin finds a coordinator; he's still looking and chose to start on the app first.
 
 Keep `PROJECT.md` §7 (checklist) updated as steps are completed, and keep a short work log in `docs/` — it becomes raw material for the dissertation.
