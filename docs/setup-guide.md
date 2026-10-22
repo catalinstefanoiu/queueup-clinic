@@ -424,7 +424,64 @@ Repo-wide extension recommendations — `.vscode/extensions.json` at the **repo 
 
 On a new machine VS Code then offers to install all of them. The root `.gitignore` already has `.vscode/*` + `!.vscode/extensions.json`, so only this file is committed.
 
-Next: connect the backend to Firestore with the Firebase Admin SDK + Application Default Credentials.
+### Connect the backend to Firestore (Admin SDK + ADC)
+
+**1. Credentials for your code (once per machine):**
+
+```bash
+gcloud auth application-default login
+```
+
+- `gcloud init` only logged in the **gcloud command**. This logs in the **libraries in your code** (Application Default Credentials, ADC).
+- On Google's consent page tick **all** permission checkboxes ("Select all"). Otherwise: *"cloud-platform scope is required but not consented"* — just run it again.
+- Saved to `%APPDATA%\gcloud\application_default_credentials.json` (outside the repo). It holds a refresh token — treat it like a password. Revoke with `gcloud auth application-default revoke`.
+- It also sets the quota project to `queueup-clinic`.
+- Why not a service-account JSON key (what many tutorials show)? Keys don't expire and leak easily into Git; Google discourages them. With ADC there's no secret file in the project, and on Cloud Run it works automatically through the service's service account.
+
+**2. Install the Admin SDK** (in `backend/`, a normal dependency — the server needs it at runtime):
+
+```bash
+npm install firebase-admin
+```
+
+Installed `firebase-admin` 14.5.0, 0 vulnerabilities. `npm warn deprecated` (node-domexception, glob) comes from its internal dependencies — ignore. `install-scripts` warnings for `@firebase/util` and `protobufjs` — not needed, everything works without them.
+
+**3. `backend/src/firestore.ts`** — one shared connection:
+
+```ts
+// Connects the backend to Firestore using the Firebase Admin SDK
+import { initializeApp, applicationDefault } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+
+// Credentials come from Application Default Credentials (ADC):
+// locally from `gcloud auth application-default login`, on Cloud Run from the service account
+const adminApp = initializeApp({
+  credential: applicationDefault(),
+  projectId: 'queueup-clinic',
+});
+
+// The "(default)" Firestore database. The Admin SDK is NOT limited by Security Rules.
+export const db = getFirestore(adminApp);
+```
+
+- `projectId` is explicit because user credentials don't carry a project.
+- An ES module runs only once, so every `import { db } from './firestore.ts'` gets the same connection.
+
+**4. Test route** in `backend/src/app.ts` (read-only, leaves no junk data):
+
+```ts
+import { db } from './firestore.ts';
+
+// Firestore health check: proves the backend can reach the database (read-only)
+app.get('/health/firestore', async (_req, res) => {
+  const collections = await db.listCollections();
+  res.json({ status: 'ok', collections: collections.map((c) => c.id) });
+});
+```
+
+`npm run dev` → <http://localhost:8080/health/firestore> → `{"status":"ok","collections":[]}` (empty until we create collections). If Firestore throws, Express 5 catches errors from `async` handlers automatically and answers 500 (Express 4 needed `try/catch`).
+
+Next: data models (`Clinic`, `Service`, `QueueEntry`) shared by frontend and backend, then `POST /queue/join`.
 
 ---
 
@@ -439,5 +496,6 @@ Next: connect the backend to Firestore with the Firebase Admin SDK + Application
 - [ ] Firebase: register web app → `npm install firebase` → config file → `FirebaseService`
 - [ ] Firestore: Standard, `(default)`, pick the region carefully (permanent; match your Cloud Run region), **production mode**
 - [ ] Backend: `npm init -y` → `npm pkg set type=module` → Express + TypeScript (type-check only) → `tsconfig.json` from §8 → scripts `dev` / `start` / `typecheck`
+- [ ] Backend → Firestore: `gcloud auth application-default login` (tick all scopes) → `npm install firebase-admin` → `initializeApp({ credential: applicationDefault(), projectId })` — no service-account keys
 - [ ] `.editorconfig` + `.prettierrc` at the **repo root**, VS Code extensions EditorConfig + Prettier, Format On Save, root `.vscode/extensions.json`
 - [ ] Work on feature branches, merge through PRs with squash

@@ -34,3 +34,6 @@ npm-debug.log*
 # Firebase
 .firebase/
 firebase-debug.log
+
+# Personal notes (Romanian glossary, local only)
+docs/glossary.md
