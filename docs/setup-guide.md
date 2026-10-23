@@ -518,7 +518,66 @@ Code exactly as in `PROJECT.md` §5, with `import type { Timestamp } from 'fireb
 
 Gotcha: `tsc` does **not** catch typos *inside* the definitions (`addres` instead of `address` is a valid field name) — re-read types carefully before building on them.
 
-Next: seed script (one clinic + one service in Firestore), then `POST /queue/join`.
+### Seed script (demo data)
+
+`backend/src/scripts/seed.ts` — inside `src/` so `tsc` checks it (`tsconfig` only includes `src`). Relative imports are resolved from the file's own folder: from `src/scripts/`, `../firestore.ts` = `src/firestore.ts`. (Gotcha: putting it in `backend/scripts/` breaks every `../` import.)
+
+```ts
+// Seed script: creates the demo clinic and its first service in Firestore.
+// Safe to run many times: fixed document IDs mean it overwrites instead of duplicating.
+import { db } from '../firestore.ts';
+import type { Clinic } from '../models/clinic.ts';
+import type { Service } from '../models/service.ts';
+
+// Fixed IDs, so we always know where the demo data lives
+const CLINIC_ID = 'demo-clinic';
+const SERVICE_ID = 'general-consultation';
+
+// The document data: everything except "id" (the ID is the document's name, not a field)
+const clinic: Omit<Clinic, 'id'> = {
+  name: 'QueueUp Demo Clinic',
+  address: 'Str. Exemplului 1, Bucharest',
+  openingHours: 'Mon–Fri 08:00–16:00',
+};
+
+const service: Omit<Service, 'id'> = {
+  clinicId: CLINIC_ID,
+  name: 'General Consultation',
+  ticketPrefix: 'C',
+  averageDurationMinutes: 15,
+  isActive: true,
+};
+
+// set() creates the document, or replaces it if it already exists
+await db.collection('clinics').doc(CLINIC_ID).set(clinic);
+await db.collection('services').doc(SERVICE_ID).set(service);
+
+console.log(`Seeded clinic "${CLINIC_ID}" and service "${SERVICE_ID}"`);
+```
+
+```bash
+npm pkg set scripts.seed="node src/scripts/seed.ts"
+npm run seed
+```
+
+- **Fixed document IDs** make it *idempotent*: running it again overwrites the same documents instead of creating duplicates.
+- `Omit<Clinic, 'id'>` = the model without `id` (the ID is the document's name, not a field inside it). Missing or misspelled fields fail `npm run typecheck`.
+- Collections are created automatically on the first write.
+- Top-level `await` works because the backend is an ES module (`"type": "module"`).
+- ⚠️ Writes to the real cloud database (the only one we have). Later: Firestore emulator for tests.
+
+Writing documents with the Admin SDK:
+
+| Call | What it does |
+|---|---|
+| `doc(id).set(data)` | Create, or **replace** the whole document — you choose the ID |
+| `collection(...).add(data)` | Create with an **auto-generated** ID (a new document every time) |
+| `doc(id).update(fields)` | Change only some fields; **fails** if the document doesn't exist |
+| `doc(id).set(data, { merge: true })` | Create, or change only the given fields |
+
+Check: Firebase Console → Firestore shows `clinics/demo-clinic` and `services/general-consultation`; `/health/firestore` returns `["clinics","services"]`.
+
+Next: `POST /queue/join`.
 
 ---
 
