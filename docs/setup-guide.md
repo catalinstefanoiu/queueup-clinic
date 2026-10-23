@@ -140,7 +140,13 @@ As of Oct 2026 no `@angular/fire` release supports Angular 22 (latest stable 20.
    };
    ```
 
-   The web config is **public by design** (it ends up in every user's browser) and is safe to commit. Data is protected by Firestore Security Rules. GitHub may still email a "Google API key detected" alert — expected for Firebase web keys. Before the first deploy: restrict the key to our domains in Google Cloud Console and add App Check.
+   The web config is **public by design** (it ends up in every user's browser) and is safe to commit. Data is protected by Firestore Security Rules ([Firebase docs on API keys](https://firebase.google.com/docs/projects/api-keys)).
+
+   **GitHub secret-scanning alert "Google API Key — Public leak"** appears after the first push. What to do:
+   1. Google Cloud Console → APIs & Services → **Credentials** → "Browser key (auto created by Firebase)". Check that **API restrictions** = "Restrict key" with only Firebase-related APIs, and that **Generative Language API (Gemini)** is *not* in the list (that one costs money). Firebase restricts auto-created keys automatically since May 2024. **Don't change anything — click Cancel** (removing a needed API breaks the app with 403 errors).
+   2. Leave **Application restrictions = None**: Firebase docs don't recommend website restrictions for Firebase keys (they can break e.g. Auth). The yellow "Action recommended" banner is generic.
+   3. On GitHub close the alert as **"Won't fix"** (not "False positive" — it *is* a real key, just intentionally public), with a comment linking the Firebase docs.
+   4. Before the first deploy: add **App Check**.
 
 4. **Service** `frontend/src/app/services/firebase.service.ts` — creates the Firebase app once and exposes Firestore:
 
@@ -424,6 +430,21 @@ Repo-wide extension recommendations — `.vscode/extensions.json` at the **repo 
 
 On a new machine VS Code then offers to install all of them. The root `.gitignore` already has `.vscode/*` + `!.vscode/extensions.json`, so only this file is committed.
 
+### Line endings: LF everywhere (`.gitattributes`)
+
+Symptom: `npm run format:check` flagged **every** file although the code looked fine. Cause: Git for Windows ships with `core.autocrlf=true`, so it writes files to disk with Windows line endings (CRLF, `\r\n`), while Prettier expects LF (`\n`) — it would pass on Linux CI but fail locally, and Prettier and Git would keep fighting on every save.
+
+Fix — `.gitattributes` at the repo root (committed, so it applies to everyone, and it overrides `core.autocrlf`):
+
+```gitattributes
+# Store and check out all text files with LF line endings, on every OS
+* text=auto eol=lf
+```
+
+And in `.editorconfig` under `[*]`: `end_of_line = lf` (new files are created with LF; the VS Code status bar shows "LF").
+
+Then convert existing files: `npm run format` in `backend/`. Afterwards Git may list files as "modified" with an empty `git diff` — only the line endings on disk changed; it disappears after `git add`.
+
 ### Connect the backend to Firestore (Admin SDK + ADC)
 
 **1. Credentials for your code (once per machine):**
@@ -481,7 +502,23 @@ app.get('/health/firestore', async (_req, res) => {
 
 `npm run dev` → <http://localhost:8080/health/firestore> → `{"status":"ok","collections":[]}` (empty until we create collections). If Firestore throws, Express 5 catches errors from `async` handlers automatically and answers 500 (Express 4 needed `try/catch`).
 
-Next: data models (`Clinic`, `Service`, `QueueEntry`) shared by frontend and backend, then `POST /queue/join`.
+### Data models (backend)
+
+Branch `feature/queue-join`. Three files in `backend/src/models/` — TypeScript **interfaces** describing the shape of each Firestore document (field names + types). They contain no data and disappear at runtime; they only let `tsc` catch wrong fields or values.
+
+| File | Describes | Collection | Linked by |
+|---|---|---|---|
+| `clinic.ts` | a clinic | `clinics` | — |
+| `service.ts` | a service with its own queue and ticket prefix | `services` | `clinicId` |
+| `queue-entry.ts` | one patient's ticket in a queue | `queueEntries` | `clinicId` + `serviceId` |
+
+Code exactly as in `PROJECT.md` §5, with `import type { Timestamp } from 'firebase-admin/firestore'` in `queue-entry.ts` (`import type` is required by `verbatimModuleSyntax`). Status values are a union type (`'waiting' | 'called' | ...`) instead of an `enum`, which Node's type stripping can't run.
+
+**Models exist twice** (backend and, later, `frontend/src/app/models/`): `Timestamp` comes from different, incompatible packages (`firebase-admin/firestore` vs `firebase/firestore`), and a shared package would need npm workspaces + tsconfig changes. Source of truth: `PROJECT.md` §5 — change both copies together.
+
+Gotcha: `tsc` does **not** catch typos *inside* the definitions (`addres` instead of `address` is a valid field name) — re-read types carefully before building on them.
+
+Next: seed script (one clinic + one service in Firestore), then `POST /queue/join`.
 
 ---
 
